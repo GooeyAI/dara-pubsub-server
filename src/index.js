@@ -39,7 +39,7 @@ const app = uWS
       }
     }
   })
-  .listen(parseInt(process.env.WS_PORT), listenSocket => {
+  .listen(9001, listenSocket => {
     if (listenSocket) {
       console.log(`Listening on port ${process.env.WS_PORT}`);
     }
