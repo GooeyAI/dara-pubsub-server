@@ -47,6 +47,14 @@ const app = uWS
 
 const subscriber = redis.createClient(process.env.REDIS_URL);
 
+subscriber.on("error", err => {
+  console.error(err);
+});
+subscriber.on("connect", () => {
+  console.log(
+    `Connected to ${process.env.REDIS_URL} (${process.env.REDIS_TOPIC})`
+  );
+});
 subscriber.on("message_buffer", (channel, message) => {
   const pubsubMsg = proto.PubsubMsg.decode(message);
 
@@ -61,6 +69,3 @@ subscriber.on("message_buffer", (channel, message) => {
 });
 
 subscriber.subscribe(process.env.REDIS_TOPIC);
-console.log(
-  `Connected to ${process.env.REDIS_URL} (${process.env.REDIS_TOPIC})`
-);
