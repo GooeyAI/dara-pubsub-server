@@ -41,7 +41,7 @@ const app = uWS
   })
   .listen(9001, listenSocket => {
     if (listenSocket) {
-      console.log(`Listening on port ${process.env.WS_PORT}`);
+      console.log(`Listening on port 9001`);
     }
   });
 
@@ -51,9 +51,7 @@ subscriber.on("error", err => {
   console.error(err);
 });
 subscriber.on("connect", () => {
-  console.log(
-    `Connected to ${process.env.REDIS_URL} (${process.env.REDIS_TOPIC})`
-  );
+  console.log(`Connected to redis (${process.env.REDIS_TOPIC})`);
 });
 subscriber.on("message_buffer", (channel, message) => {
   const pubsubMsg = proto.PubsubMsg.decode(message);
