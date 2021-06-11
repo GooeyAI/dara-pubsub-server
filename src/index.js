@@ -2,8 +2,15 @@ const uWS = require("uWebSockets.js");
 const proto = require("./gen/complied.js");
 const jwt = require("jsonwebtoken");
 const redis = require("redis");
+const Sentry = require("@sentry/node");
 
 require("dotenv").config();
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN
+  });
+}
 
 const app = uWS
   .App({})
