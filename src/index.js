@@ -3,20 +3,28 @@ const proto = require("./gen/complied.js");
 const jwt = require("jsonwebtoken");
 const redis = require("redis");
 const Sentry = require("@sentry/node");
+const Amplitude = require("@amplitude/node");
+const os = require("os");
 
 require("dotenv").config();
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
-    dsn: process.env.SENTRY_DSN
+    dsn: process.env.SENTRY_DSN,
   });
 }
+
+const PLATFORM = process.env.SENTRY_ENVIRONMENT || "nodejs";
+const DEVICE_ID = `${PLATFORM}-${os.hostname()}`;
+console.log(`Amplitude device id: ${DEVICE_ID}`);
+
+const amplitude = Amplitude.init(process.env.AMPLITUDE_API_KEY);
 
 const app = uWS
   .App({})
   .ws("/*", {
     compression: uWS.SHARED_COMPRESSOR,
-    open: ws => {
+    open: (ws) => {
       ws["authDone"] = false;
     },
     message: (ws, message, isBinary) => {
@@ -44,9 +52,9 @@ const app = uWS
       } else {
         ws.end(4401, "NeedAuthToken");
       }
-    }
+    },
   })
-  .listen(9001, listenSocket => {
+  .listen(9001, (listenSocket) => {
     if (listenSocket) {
       console.log(`Listening on port 9001`);
     }
@@ -54,7 +62,7 @@ const app = uWS
 
 const subscriber = redis.createClient(process.env.REDIS_URL);
 
-subscriber.on("error", err => {
+subscriber.on("error", (err) => {
   console.error(err);
 });
 subscriber.on("connect", () => {
@@ -71,6 +79,18 @@ subscriber.on("message_buffer", (channel, message) => {
     app.publish(topic, buffer, true, true);
   }
   console.log(`published ${serverMsg.data.byteLength}B @ ${pubsubMsg.topics}`);
+
+  if (pubsubMsg.msgPropsJson) {
+    let msgProps = JSON.parse(pubsubMsg.msgPropsJson);
+    msgProps.timestamp = Date.now();
+    amplitude.logEvent({
+      event_type: "realtimeMsg wsSend",
+      time: Date.now(),
+      device_id: DEVICE_ID,
+      platform: PLATFORM,
+      event_properties: msgProps,
+    });
+  }
 });
 
 subscriber.subscribe(process.env.REDIS_TOPIC);

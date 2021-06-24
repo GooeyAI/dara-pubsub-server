@@ -400,6 +400,7 @@ $root.PubsubMsg = (function() {
      * @interface IPubsubMsg
      * @property {Array.<string>|null} [topics] PubsubMsg topics
      * @property {Uint8Array|null} [data] PubsubMsg data
+     * @property {string|null} [msgPropsJson] PubsubMsg msgPropsJson
      */
 
     /**
@@ -435,6 +436,28 @@ $root.PubsubMsg = (function() {
     PubsubMsg.prototype.data = $util.newBuffer([]);
 
     /**
+     * PubsubMsg msgPropsJson.
+     * @member {string|null|undefined} msgPropsJson
+     * @memberof PubsubMsg
+     * @instance
+     */
+    PubsubMsg.prototype.msgPropsJson = null;
+
+    // OneOf field names bound to virtual getters and setters
+    var $oneOfFields;
+
+    /**
+     * PubsubMsg _MsgPropsJsonOneof.
+     * @member {"msgPropsJson"|undefined} _MsgPropsJsonOneof
+     * @memberof PubsubMsg
+     * @instance
+     */
+    Object.defineProperty(PubsubMsg.prototype, "_MsgPropsJsonOneof", {
+        get: $util.oneOfGetter($oneOfFields = ["msgPropsJson"]),
+        set: $util.oneOfSetter($oneOfFields)
+    });
+
+    /**
      * Creates a new PubsubMsg instance using the specified properties.
      * @function create
      * @memberof PubsubMsg
@@ -463,6 +486,8 @@ $root.PubsubMsg = (function() {
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.topics[i]);
         if (message.data != null && Object.hasOwnProperty.call(message, "data"))
             writer.uint32(/* id 2, wireType 2 =*/18).bytes(message.data);
+        if (message.msgPropsJson != null && Object.hasOwnProperty.call(message, "msgPropsJson"))
+            writer.uint32(/* id 3, wireType 2 =*/26).string(message.msgPropsJson);
         return writer;
     };
 
@@ -505,6 +530,9 @@ $root.PubsubMsg = (function() {
             case 2:
                 message.data = reader.bytes();
                 break;
+            case 3:
+                message.msgPropsJson = reader.string();
+                break;
             default:
                 reader.skipType(tag & 7);
                 break;
@@ -540,6 +568,7 @@ $root.PubsubMsg = (function() {
     PubsubMsg.verify = function verify(message) {
         if (typeof message !== "object" || message === null)
             return "object expected";
+        var properties = {};
         if (message.topics != null && message.hasOwnProperty("topics")) {
             if (!Array.isArray(message.topics))
                 return "topics: array expected";
@@ -550,6 +579,11 @@ $root.PubsubMsg = (function() {
         if (message.data != null && message.hasOwnProperty("data"))
             if (!(message.data && typeof message.data.length === "number" || $util.isString(message.data)))
                 return "data: buffer expected";
+        if (message.msgPropsJson != null && message.hasOwnProperty("msgPropsJson")) {
+            properties._MsgPropsJsonOneof = 1;
+            if (!$util.isString(message.msgPropsJson))
+                return "msgPropsJson: string expected";
+        }
         return null;
     };
 
@@ -577,6 +611,8 @@ $root.PubsubMsg = (function() {
                 $util.base64.decode(object.data, message.data = $util.newBuffer($util.base64.length(object.data)), 0);
             else if (object.data.length)
                 message.data = object.data;
+        if (object.msgPropsJson != null)
+            message.msgPropsJson = String(object.msgPropsJson);
         return message;
     };
 
@@ -610,6 +646,11 @@ $root.PubsubMsg = (function() {
         }
         if (message.data != null && message.hasOwnProperty("data"))
             object.data = options.bytes === String ? $util.base64.encode(message.data, 0, message.data.length) : options.bytes === Array ? Array.prototype.slice.call(message.data) : message.data;
+        if (message.msgPropsJson != null && message.hasOwnProperty("msgPropsJson")) {
+            object.msgPropsJson = message.msgPropsJson;
+            if (options.oneofs)
+                object._MsgPropsJsonOneof = "msgPropsJson";
+        }
         return object;
     };
 
