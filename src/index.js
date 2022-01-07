@@ -24,31 +24,28 @@ const app = uWS
   .App({})
   .ws("/*", {
     compression: uWS.SHARED_COMPRESSOR,
-    open: (ws) => {
-      ws["authDone"] = false;
-    },
     message: (ws, message, isBinary) => {
       const clientMsg = proto.WsClientMsg.decode(new Uint8Array(message));
-      if (ws["authDone"]) {
-        const serverMsg = proto.WsServerMsg.create();
-        const buffer = proto.WsServerMsg.encode(serverMsg).finish();
-        ws.send(buffer, true, true);
-      } else if (clientMsg.authToken) {
-        jwt.verify(
-          clientMsg.authToken,
-          process.env.SECRET_KEY,
-          (err, decoded) => {
-            if (err) {
-              ws.end(4401, err.name);
-            } else {
-              ws["authDone"] = true;
+
+      let authToken = clientMsg.authToken || ws["authToken"];
+      if (authToken) {
+        jwt.verify(authToken, process.env.SECRET_KEY, (err, decoded) => {
+          if (err) {
+            ws.end(4401, err.name);
+          } else {
+            if (!ws["authToken"]) {
+              ws["authToken"] = authToken;
               ws.subscribe(decoded["x-pubsub-topic"]);
               console.log(
                 `auth done, subscribed to ${decoded["x-pubsub-topic"]}`
               );
+            } else {
+              const serverMsg = proto.WsServerMsg.create();
+              const buffer = proto.WsServerMsg.encode(serverMsg).finish();
+              ws.send(buffer, true, true);
             }
           }
-        );
+        });
       } else {
         ws.end(4401, "NeedAuthToken");
       }
