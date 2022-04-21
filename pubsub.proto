@@ -12,4 +12,5 @@ message PubsubMsg {
   repeated string topics = 1;
   bytes data = 2;
   string msg_props_json = 3;
+  string sender_platform = 4;
 }

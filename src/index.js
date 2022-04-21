@@ -72,20 +72,55 @@ subscriber.on("message_buffer", (channel, message) => {
   serverMsg.data = pubsubMsg.data;
   const buffer = proto.WsServerMsg.encode(serverMsg).finish();
 
-  for (const topic of pubsubMsg.topics) {
-    app.publish(topic, buffer, true, true);
+  let msgProps;
+  if (pubsubMsg.msgPropsJson) {
+    msgProps = JSON.parse(pubsubMsg.msgPropsJson);
   }
+
+  if (msgProps) {
+    amplitude.logEvent({
+      event_type: "msg pubsubRecv",
+      time: Date.now(),
+      device_id: DEVICE_ID,
+      user_id: msgProps["senderId"],
+      platform: pubsubMsg.senderPlatform,
+      event_properties: {
+        ...msgProps,
+        timestamp: Date.now(),
+      },
+    });
+  }
+
+  for (const recipientUserId of pubsubMsg.topics) {
+    app.publish(recipientUserId, buffer, true, true);
+
+    if (msgProps) {
+      amplitude.logEvent({
+        event_type: "msg wsSend",
+        time: Date.now(),
+        device_id: DEVICE_ID,
+        user_id: msgProps["senderId"],
+        platform: pubsubMsg.senderPlatform,
+        event_properties: {
+          ...msgProps,
+          timestamp: Date.now(),
+        },
+      });
+    }
+  }
+
   console.log(`published ${serverMsg.data.byteLength}B @ ${pubsubMsg.topics}`);
 
-  if (pubsubMsg.msgPropsJson) {
-    let msgProps = JSON.parse(pubsubMsg.msgPropsJson);
-    msgProps.timestamp = Date.now();
+  if (msgProps) {
     amplitude.logEvent({
       event_type: "realtimeMsg wsSend",
       time: Date.now(),
       device_id: DEVICE_ID,
       platform: PLATFORM,
-      event_properties: msgProps,
+      event_properties: {
+        ...msgProps,
+        timestamp: Date.now(),
+      },
     });
   }
 });
