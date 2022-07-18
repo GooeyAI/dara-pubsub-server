@@ -1,4 +1,4 @@
-FROM node:lts-buster
+FROM node:16-buster
 
 COPY yarn.lock package.json ./
 RUN yarn
